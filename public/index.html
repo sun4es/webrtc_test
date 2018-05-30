@@ -26,11 +26,11 @@ var pusher = new Pusher('4f12dd5c9b8a00e59b61', {
   // Storage of Pusher connection socket ID
   var socketId;
 
-  // Pusher.log = function(message) {
-  //   if (window.console && window.console.log) {
-  //     window.console.log(message);
-  //   }
-  // };
+  Pusher.log = function(message) {
+    if (window.console && window.console.log) {
+      window.console.log(message);
+    }
+  };
 
   // Monitor Pusher connection state
   pusher.connection.bind("state_change", function(states) {
