@@ -1,0 +1,24 @@
+{
+  "name": "webrtc_test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sun4es/webrtc_test.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sun4es/webrtc_test/issues"
+  },
+  "homepage": "https://github.com/sun4es/webrtc_test#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "errorhandler": "^1.5.0",
+    "express": "^4.16.3"
+  }
+}
