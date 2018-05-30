@@ -59,7 +59,10 @@ datachannel.openSignalingChannel = function(config) {
           socketId: socketId,
           channel: channel,
           message: message
-        })
+        }),
+        headers: {
+          'content-type': 'application/json'
+        },
       }).then(data => {
         xhrErrorCount = 0;
       }).catch(() => {
