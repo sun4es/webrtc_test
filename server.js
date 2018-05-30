@@ -1,57 +1,44 @@
-var express = require("express");
-var bodyParser = require("body-parser");
-var errorHandler = require("errorhandler");
+var socket_io = require("socket.io");
 
-var app = express();
-var root = __dirname + "/public";
+module.exports = function (server) {
+  var users = {};
+  var io = socket_io(server);
+  io.on("connection", function(socket) {
 
-// -------------------------------------------------------------
-// SET UP PUSHER
-// -------------------------------------------------------------
-var Pusher = require("pusher");
-var pusher = new Pusher({
-  appId: "534611",
-  key: "4f12dd5c9b8a00e59b61",
-  secret: "5cda7e9ab75677332dc1"
-});
+    // ∆елание нового пользовател€ присоединитьс€ к комнате
+    socket.on("room", function(message) {
+      var json = JSON.parse(message);
+      // ƒобавл€ем сокет в список пользователей
+      users[json.id] = socket;
+      if (socket.room !== undefined) {
+        // ≈сли сокет уже находитс€ в какой-то комнате, выходим из нее
+        socket.leave(socket.room);
+      }
+      // ¬ходим в запрошенную комнату
+      socket.room = json.room;
+      socket.join(socket.room);
+      socket.user_id = json.id;
+      // ќтправ€лем остальным клиентам в этой комнате сообщение о присоединении нового участника
+      socket.broadcast.to(socket.room).emit("new", json.id);
+    });
 
-// -------------------------------------------------------------
-// SET UP EXPRESS
-// -------------------------------------------------------------
+    // —ообщение, св€занное с WebRTC (SDP offer, SDP answer или ICE candidate)
+    socket.on("webrtc", function(message) {
+      var json = JSON.parse(message);
+      if (json.to !== undefined && users[json.to] !== undefined) {
+        // ≈сли в сообщении указан получатель и этот получатель известен серверу, отправл€ем сообщение только ему...
+        users[json.to].emit("webrtc", message);
+      } else {
+        // ...иначе считаем сообщение широковещательным
+        socket.broadcast.to(socket.room).emit("webrtc", message);
+      }
+    });
 
-// Parse application/json and application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({
-  extended: true
-}));
-app.use(bodyParser.json());
-
-// Simple logger
-app.use(function(req, res, next){
-  console.log("%s %s", req.method, req.url);
-  console.log(req.body);
-  next();
-});
-
-// Error handler
-app.use(errorHandler({
-  dumpExceptions: true,
-  showStack: true
-}));
-
-// Serve static files from directory
-app.use(express.static(root));
-
-// Message proxy
-app.post("/message", function(req, res) {
-  var socketId = req.body.socketId;
-  var channel = req.body.channel;
-  var message = req.body.message;
-
-  pusher.trigger(channel, "message", message, socketId);
-
-  res.send(200);
-});
-
-// Open server on specified port
-console.log("Starting Express server");
-app.listen(process.env.PORT || 5001);
+    //  то-то отсоединилс€
+    socket.on("disconnect", function() {
+      // ѕри отсоединении клиента, оповещаем об этом остальных
+      socket.broadcast.to(socket.room).emit("leave", socket.user_id);
+      delete users[socket.user_id];
+    });
+  });
+};
