@@ -19,7 +19,7 @@ var datachannel = new DataChannel();
   // https://github.com/muaz-khan/WebRTC-Experiment/tree/master/DataChannel#use-custom-user-ids
   datachannel.userid = window.userid;
 
-var pusher = new Pusher("4f12dd5c9b8a00e59b61");
+var pusher = new Pusher("4f12dd5c9b8a00e59b61", { 'cluster': 'eu' });
 
   // Storage of Pusher connection socket ID
   var socketId;
