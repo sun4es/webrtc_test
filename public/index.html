@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title></title>
+  <style>
+
+  </style>
+</head>
+<body>
+  <script src="//js.pusher.com/2.2/pusher.js"></script>
+  <script src="//webrtc-experiment.com/DataChannel.js"></script>
+  <script>
+var datachannel = new DataChannel();
+
+  // Set the userid based on what has been defined by DataChannel
+  // https://github.com/muaz-khan/WebRTC-Experiment/tree/master/DataChannel#use-custom-user-ids
+  datachannel.userid = window.userid;
+
+var pusher = new Pusher("PUSHER_APP_KEY");
+
+  // Storage of Pusher connection socket ID
+  var socketId;
+
+  // Pusher.log = function(message) {
+  //   if (window.console && window.console.log) {
+  //     window.console.log(message);
+  //   }
+  // };
+
+  // Monitor Pusher connection state
+  pusher.connection.bind("state_change", function(states) {
+    switch (states.current) {
+      case "connected":
+        socketId = pusher.connection.socket_id;
+      break;
+      case "disconnected":
+      case "failed":
+      case "unavailable":
+      break;
+    }
+  });
+
+  // Set custom Pusher signalling channel
+// https://github.com/muaz-khan/WebRTC-Experiment/blob/master/Signaling.md
+datachannel.openSignalingChannel = function(config) {
+  var channel = config.channel || this.channel || "default-channel";
+  var xhrErrorCount = 0;
+
+  var socket = {
+    send: function(message) {
+      fetch('/message', {
+        method: "POST",
+        body: {
+          socketId: socketId,
+          channel: channel,
+          message: message
+        }
+      }).then(data => {
+        xhrErrorCount = 0;
+      }).catch(() => {
+        xhrErrorCount++;
+        if (xhrErrorCount > 5) {
+          console.log("Disabling signaller due to connection failure");
+          datachannel.transmitRoomOnce = true;
+        }
+      });
+    },
+    channel: channel
+  };
+
+  // Subscribe to Pusher signalling channel
+  var pusherChannel = pusher.subscribe(channel);
+
+  // Call callback on successful connection to Pusher signalling channel
+  pusherChannel.bind("pusher:subscription_succeeded", function() {
+    if (config.callback) config.callback(socket);
+  });
+
+  // Proxy Pusher signaller messages to DataChannel
+  pusherChannel.bind("message", function(message) {
+    config.onmessage(message);
+  });
+
+  return socket;
+};
+
+
+  </script>
+</body>
+</html>
