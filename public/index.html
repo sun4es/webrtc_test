@@ -55,11 +55,11 @@ datachannel.openSignalingChannel = function(config) {
     send: function(message) {
       fetch('/message', {
         method: "POST",
-        body: {
+        body: JSON.stringify({
           socketId: socketId,
           channel: channel,
           message: message
-        }
+        })
       }).then(data => {
         xhrErrorCount = 0;
       }).catch(() => {
